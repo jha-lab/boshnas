@@ -6,7 +6,7 @@ import sys
 import pickle
 from collections import namedtuple
 
-import nasbench301 as nb
+# import nasbench301 as nb
 
 OPS = ['max_pool_3x3',
        'avg_pool_3x3',
