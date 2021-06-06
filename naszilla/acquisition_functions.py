@@ -63,6 +63,10 @@ def acq_fn(predictions, ytrain=None, stds=None, explore_type='its'):
         samples = np.random.normal(mean, stds)
         sorted_indices = np.argsort(samples)
 
+    # Purely uncertainty based sampling
+    elif explore_type == 'unc':
+        sorted_indices = np.argsort(-1 * stds)
+
     else:
         print('{} is not a valid exploration type'.format(explore_type))
         raise NotImplementedError()
