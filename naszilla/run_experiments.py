@@ -10,7 +10,11 @@ import copy
 sys.path.insert(0, '../')
 
 from naszilla.params import *
-from naszilla.nas_benchmarks import Nasbench101, Nasbench201, Nasbench301
+from naszilla.nas_benchmarks import Nasbench101
+
+# No support for Nasbench201 and Nasbench301 for now
+# from naszilla.nas_benchmarks import Nasbench201, Nasbench301
+
 from naszilla.nas_algorithms import run_nas_algorithm
 
 def run_experiments(args, save_dir):
@@ -33,13 +37,15 @@ def run_experiments(args, save_dir):
 
     if ss == 'nasbench_101':
         search_space = Nasbench101(mf=mf)
-    elif ss == 'nasbench_201':
-        search_space = Nasbench201(dataset=dataset)
-    elif ss == 'nasbench_301':
-        search_space = Nasbench301()
+    # No support for Nasbench201 and Nasbench301 for now
+    # elif ss == 'nasbench_201':
+    #     search_space = Nasbench201(dataset=dataset)
+    # elif ss == 'nasbench_301':
+    #     search_space = Nasbench301()
+    elif ss == 'nasbench_201' or ss == 'nasbenc_301':
+    	raise NotImplementedError('No support for Nasbench201 and Nasbench301 for now')
     else:
-        print('Invalid search space')
-        raise NotImplementedError()
+        raise ValueError('Invalid search space')
 
     for i in range(trials):
         results = []
