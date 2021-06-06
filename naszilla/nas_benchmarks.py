@@ -4,15 +4,16 @@ import sys
 import os
 
 from nasbench import api
-from nas_201_api import NASBench201API as API
+# No support for Nasbench201 and Nasbench301 for now
+# from nas_201_api import NASBench201API as API
 # import nasbench301 as nb
 
 from naszilla.nas_bench_101.cell_101 import Cell101
-from naszilla.nas_bench_201.cell_201 import Cell201
-from naszilla.nas_bench_301.cell_301 import Cell301
+# from naszilla.nas_bench_201.cell_201 import Cell201
+# from naszilla.nas_bench_301.cell_301 import Cell301
 
 
-default_data_folder = '~/boshnas/'
+default_data_folder = '../'
 
 
 class Nasbench:

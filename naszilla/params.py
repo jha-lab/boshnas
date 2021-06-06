@@ -29,7 +29,10 @@ def algo_params(param_str, queries=150):
         params.append({'algo_name':'local_search', 'total_queries':queries})
         params.append({'algo_name':'gp_bayesopt', 'total_queries':queries, 'distance':'nasbot'})
         params.append({'algo_name':'gcn_predictor', 'total_queries':queries})
-        params.append({'algo_name':'bonas', 'total_queries':queries})   
+        params.append({'algo_name':'bonas', 'total_queries':queries})
+
+        # Adding BOSHNAS here
+        params.append({'algo_name':'boshnas', 'total_queries':queries})   
         
     elif param_str == 'local_search_variants':
         params.append({'algo_name':'local_search', 'total_queries':queries})
@@ -57,7 +60,9 @@ def algo_params(param_str, queries=150):
         params.append({'algo_name':'gcn_predictor', 'total_queries':queries})
     elif param_str == 'bonas':
         params.append({'algo_name':'bonas', 'total_queries':queries})   
-        
+    # Adding BOSHNAS here
+    elif param_str == 'boshnas':
+        params.append({'algo_name':'boshnas', 'total_queries':queries})
     else:
         print('Invalid algorithm params: {}'.format(param_str))
         raise NotImplementedError()
