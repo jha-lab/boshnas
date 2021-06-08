@@ -1,4 +1,4 @@
-MODEL_SAVE_PATH = 'naszilla/gosh/checkpoints'
+MODEL_SAVE_PATH = 'naszilla/gosh_src/checkpoints'
 
 UCB_K = 1
 LR = 0.0001
