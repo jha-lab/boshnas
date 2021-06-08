@@ -13,6 +13,7 @@ from naszilla.meta_neural_net import MetaNeuralnet
 from naszilla.bo.bo.probo import ProBO
 from naszilla.gcn.model import NeuralPredictor
 from naszilla.gcn.train_gcn import fit, predict
+from naszilla.gosh_src.gosh import *
 
 # default parameters for the NAS algorithms
 DEFAULT_NUM_INIT = 10
