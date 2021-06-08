@@ -369,21 +369,26 @@ def boshnas(search_space,
                                                 cutoff=cutoff)
 
     # Get the entire dataset's encodings. Only works for Nasbench101
-    x = 0
+    x = []
     dataset = []
     for model_hash, model in search_space.nasbench.fixed_statistics.items():
         cell = search.space.query_arch({'matrix': model['module_adjacency', 
                                         'ops': model['module_operations']]})
         x.append(cell['encoding'])
         dataset.append(cell)
+    np_x = np.array(x)
+    min_x, max_x = np.min(np_x, axis=0); np.max(np_x, axis=0)
 
     # Initialize GOSH model
     # Different bells-and-whistles for the GOSH model can be specified here
     # FIXME:needs to be implemented
     meta_neuralnet = GOSH(input_dim=data[0]['encoding'].shape[0], 
+                          bounds=(min_x, max_x),
                           implement_gobi=implement_gobi,
                           trust_region=trust_region, 
-                          model_aleatoric=model_aleatoric)
+                          parallel=True,
+                          model_aleatoric=model_aleatoric,
+                          pretrained=False)
 
     query = num_init + k
 
@@ -397,16 +402,18 @@ def boshnas(search_space,
         # Train a BNN + NPN model on the current data and report triaining error
         # FIXME: needs to be implemented
         train_error = meta_neuralnet.train(xtrain, ytrain)
+        # FIXME: Implement see_al based on change in min of y_train
+        see_al = True
 
         if implement_gobi:
             # Implementation of GOBI over the entire designs space
 
             # Get predictions for all datapoints
             # FIXME: needs to be implemented
-            candidate_predictions, uncertainties = meta_neuralnet.predict(x)
+            candidate_predictions, uncertainties = meta_neuralnet.predict(x, see_al=see_al)
 
             # FIXME: needs to be implemented
-            query_indices = meta_neuralnet.get_queries(k=k, explore_type=explore_type)
+            query_indices = meta_neuralnet.get_queries(x=x, k=k, explore_type=explore_type)
 
             # add the k arches with the minimum acquisition function values
             for i in query_indices:
