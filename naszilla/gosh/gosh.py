@@ -86,9 +86,15 @@ class GOSH():
 	    iteration = 0; equal = 0; z_old = 100; zs = []
 	    while iteration < 200:
 	        old = deepcopy(init.data)
-	        z = model(init)
+	        if self.trust_region:
+	        	trust_bounds = (old*(1-trust_region), old*(1+trust_region))
+			pred = self.npn(init)[0] if self.run_aleatoric else self.teacher(init)
+	        ep = self.student(init)
+	        z = gosh_acq(pred, ep)
 	        optimizer.zero_grad(); z.backward(); optimizer.step(); scheduler.step()
 	        init = torch.max(self.bounds[0], torch.min(self.bounds[1], init))
+	        if self.trust_region:
+	        	init = torch.max(trust_bounds[0], torch.min(trust_bounds[1], init))
 	        equal = equal + 1 if torch.all((init - old) < epsilon) else 0
 	        if equal > 5: break
 	        iteration += 1; z_old = z.item()
