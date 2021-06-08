@@ -1,19 +1,22 @@
 import random
 import multiprocessing
 from joblib import Parallel, delayed
+from copy import deepcopy
 
 from .model import *
 from .constants import *
 from .gosh_acq import *
+from adahessian import Adahessian
 
 num_cores = multiprocessing.cpu_count()
 
 class GOSH():
-	def __init__(self, input_dim, bounds, implement_gobi, trust_region, parallel, model_aleatoric, pretrained):
+	def __init__(self, input_dim, bounds, implement_gobi, trust_region, second_order, parallel, model_aleatoric, pretrained):
 		assert bounds[0].shape == input_dim and bounds[1].shape == input_dim
 		self.input_dim = input_dim
 		self.bounds = bounds
 		self.trust_region = trust_region
+		self.second_order = second_order
 		self.run_aleatoric = model_aleatoric
 		self.init_models(pretrained)
 
@@ -56,7 +59,7 @@ class GOSH():
 				else:
 					pred, al = self.teacher(feat), 0
 				ep = self.student(feat)
-				outputs.append((pred, (al, ep)))
+				outputs.append((pred, (ep, al)))
 		if not self.run_aleatoric: self.teacher.train()
 		return outputs
 
@@ -71,18 +74,20 @@ class GOSH():
 		'''
 		threads = max(num_cores, k) if self.parallel else 1
 		inits = random.choices(x, k=k)
+		if not self.run_aleatoric: self.teacher.eval()
 		self.freeze()
 		inits = Parallel(n_jobs=threads, backend='threading')(delayed(self.parallelizedFunc)(i, explore_type) for i in inits)
 		self.unfreeze()
 		indices = []
 		for init in inits:
-			devs = torch.mean(torch.abs(init - x))
-			indices.append(torch.arming(devs).item())
+			devs = torch.mean(torch.abs(init - torch.from_numpy(np.array(x))))
+			indices.append(torch.argmin(devs).item())
+		if not self.run_aleatoric: self.teacher.train()
 		return indices
 
 	def parallelizedFunc(self, init, explore_type):
 		init = torch.tensor(init, dtype=torch.float, requires_grad=True)
-	    optimizer = torch.optim.AdamW([init] , lr=0.8)
+	    optimizer = torch.optim.AdamW([init] , lr=0.8) if not self.second_order else Adahessian([init] , lr=0.8)
 	    scheduler = torch.optim.lr_scheduler.CosineAnnealingLR(optimizer, T_max=10)
 	    iteration = 0; equal = 0; z_old = 100; zs = []
 	    while iteration < 200:
@@ -130,7 +135,7 @@ class GOSH():
 			feat = torch.tensor(feat, dtype=torch.float)
 			outputs = [self.teacher(feat) for _ in range(Teacher_student_cycles)]
 			y_true = torch.std(torch.stack(outputs))
-			y_pred = self.teacher(feat)
+			y_pred = self.student(feat)
 			self.student_opt.zero_grad()
 			loss = RMSE(y_pred, y_true)
 			loss.backward()

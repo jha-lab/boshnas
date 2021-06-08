@@ -386,6 +386,7 @@ def boshnas(search_space,
                           bounds=(min_x, max_x),
                           implement_gobi=implement_gobi,
                           trust_region=trust_region, 
+                          second_order=False,
                           parallel=True,
                           model_aleatoric=model_aleatoric,
                           pretrained=False)
