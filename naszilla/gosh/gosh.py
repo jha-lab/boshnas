@@ -4,6 +4,7 @@ from joblib import Parallel, delayed
 
 from .model import *
 from .constants import *
+from .gosh_acq import *
 
 num_cores = multiprocessing.cpu_count()
 
