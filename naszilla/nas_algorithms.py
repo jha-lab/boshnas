@@ -310,9 +310,11 @@ def boshnas(search_space,
             mutate_encoding='adj',
             random_encoding='adj',
             implement_gobi=True,
-            trust_region=True,
-            model_aleatoric=True,
-            deterministic=False,
+            trust_region=False,
+            model_aleatoric=False,
+            parallel=True,
+            second_order=False,
+            deterministic=True,
             verbose=1):
     """
     Bayesian Optimization using Second-order gradients on a 
@@ -353,6 +355,8 @@ def boshnas(search_space,
             a trust region
         model_aleatoric (bool, optional): if True, NPN model implemented to
             estimate aleatoric uncertainty
+        parrallel (bool, optional): parallel cold restarts of GOBI algorithm
+        second_order (bool, optional): second odrger gradients are computed
         deterministic (bool, optional): if False, random sampling is implemented,
             i.e. aleatoric uncertainty is preserved in simulations; else True
         verbose (int, optional): verbose mode
@@ -371,24 +375,35 @@ def boshnas(search_space,
 
     # Get the entire dataset's encodings. Only works for Nasbench101
     x = []
-    dataset = []
-    for model_hash, model in search_space.nasbench.fixed_statistics.items():
-        cell = search.space.query_arch({'matrix': model['module_adjacency', 
-                                        'ops': model['module_operations']]})
-        x.append(cell['encoding'])
-        dataset.append(cell)
+    arches = []
+
+    print('Generating architectures')
+    for _, model in search_space.nasbench.fixed_statistics.items():
+    	arches.append({'matrix': model['module_adjacency'], 
+                       'ops': model['module_operations']})
+
+    print('Generating dataset') 
+    dataset = search_space.convert_to_cells(arches=arches,
+    										predictor_encoding=predictor_encoding,
+    										train=False)
+
+    print('Generating list of input encodings')
+    for cell in dataset:
+    	x.append(cell['encoding'])
+
+    print('Calculating input bounds')
     np_x = np.array(x)
-    min_x, max_x = np.min(np_x, axis=0); np.max(np_x, axis=0)
+    min_x, max_x = np.min(np_x, axis=0), np.max(np_x, axis=0)
 
     # Initialize GOSH model
     # Different bells-and-whistles for the GOSH model can be specified here
-    # FIXME:needs to be implemented
+    print('Initializing GOSH model')
     meta_neuralnet = GOSH(input_dim=data[0]['encoding'].shape[0], 
                           bounds=(min_x, max_x),
                           implement_gobi=implement_gobi,
                           trust_region=trust_region, 
-                          second_order=False,
-                          parallel=True,
+                          second_order=second_order,
+                          parallel=parallel,
                           model_aleatoric=model_aleatoric,
                           pretrained=False)
 
@@ -397,25 +412,28 @@ def boshnas(search_space,
     while query <= total_queries:
 
         xtrain = np.array([d['encoding'] for d in data])
-        ytrain = np.array([d[loss] for d in data])
+        ytrain = np.array([d[loss]/100 for d in data])
 
         train_error = 0
 
         # Train a BNN + NPN model on the current data and report triaining error
-        # FIXME: needs to be implemented
+        print('Training GOSH model')
         train_error = meta_neuralnet.train(xtrain, ytrain)
-        # FIXME: Implement see_al based on change in min of y_train
-        see_al = True
+
+        # FIXME: Implement use_al based on change in min of y_train as the agent reaches
+        # the optimum point. Can only be set to True if model_aleatoric is True.
+        use_al = False
 
         if implement_gobi:
             # Implementation of GOBI over the entire designs space
 
             # Get predictions for all datapoints
-            # FIXME: needs to be implemented
-            candidate_predictions, uncertainties = meta_neuralnet.predict(x, see_al=see_al)
+            print('Calculating predictions')
+            # candidate_predictions, uncertainties = meta_neuralnet.predict(x)
 
-            # FIXME: needs to be implemented
-            query_indices = meta_neuralnet.get_queries(x=x, k=k, explore_type=explore_type)
+            # Get next queries using GOBI
+            print('Getting next queries')
+            query_indices = meta_neuralnet.get_queries(x=x, k=k, explore_type=explore_type, use_al=use_al)
 
             # add the k arches with the minimum acquisition function values
             for i in query_indices:

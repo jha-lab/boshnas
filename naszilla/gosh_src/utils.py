@@ -3,6 +3,8 @@ import pandas as pd
 import numpy as np
 import torch
 import random
+from .constants import *
+import matplotlib.pyplot as plt
 
 def save_model(model, optimizer, epoch, loss_list):
 	file_path = MODEL_SAVE_PATH + "/" + model.name + "_" + str(epoch) + ".ckpt"
@@ -23,6 +25,11 @@ def load_model(model, optimizer):
 	loss_list = checkpoint['loss_list']
 	return model, optimizer, epoch, loss_list
 
+def plotgraph(l, name):
+	plt.plot(l, '.')
+	plt.plot(np.convolve(l, np.ones(5)/5, mode='same'), '--')
+	plt.savefig(f'{name}.png')
+	plt.cla()
 
 def freeze_models(models):
 	for model in models:

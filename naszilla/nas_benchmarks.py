@@ -13,7 +13,7 @@ from naszilla.nas_bench_101.cell_101 import Cell101
 # from naszilla.nas_bench_301.cell_301 import Cell301
 
 
-default_data_folder = '../'
+default_data_folder = '~/boshnas/'
 
 
 class Nasbench:
@@ -37,13 +37,16 @@ class Nasbench:
         arch_dict['epochs'] = epochs
 
         if arch is None:
-
             arch = self.get_cell().random_cell(self.nasbench,
                                                random_encoding=random_encoding, 
                                                max_edges=max_edges, 
                                                max_nodes=max_nodes,
                                                cutoff=cutoff,
                                                index_hash=self.index_hash)
+
+        else:
+            arch = self.get_cell().convert_to_cell(arch)
+
         arch_dict['spec'] = arch
 
         if predictor_encoding:
@@ -324,7 +327,7 @@ class Nasbench101(Nasbench):
                          train=True):
         cells = []
         for arch in arches:
-            spec = Cell.convert_to_cell(arch)
+            spec = Cell101.convert_to_cell(arch)
             cell = self.query_arch(spec,
                                    predictor_encoding=predictor_encoding,
                                    cutoff=cutoff,

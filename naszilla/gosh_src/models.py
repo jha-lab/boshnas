@@ -8,11 +8,11 @@ class student(nn.Module):
         super(student, self).__init__()
         self.name = "student"
         self.run = nn.Sequential(
-            nn.Linear(feats, feats // 2),
+            nn.Linear(feats, 64),
             nn.Softplus(),
-            nn.Linear(feats // 2, feats // 4),
+            nn.Linear(64, 32),
             nn.Softplus(),
-            nn.Linear(feats // 4, 1),
+            nn.Linear(32, 1),
             nn.Sigmoid())
 
     def forward(self, x):
@@ -25,13 +25,13 @@ class teacher(nn.Module):
         super(teacher, self).__init__()
         self.name = "teacher"
         self.run = nn.Sequential(
-            nn.Linear(feats, feats // 2),
+            nn.Linear(feats, 64),
             nn.Softplus(),
             nn.Dropout(0.5),
-            nn.Linear(feats // 2, feats // 4),
+            nn.Linear(64, 32),
             nn.Softplus(),
             nn.Dropout(0.5),
-            nn.Linear(feats // 4, 1),
+            nn.Linear(32, 1),
             nn.Sigmoid())
 
     def forward(self, x):

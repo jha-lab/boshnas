@@ -10,6 +10,9 @@ notebooks/*.png
 notebooks/*.pdf
 *.out
 
+# GOSH files
+**.ckpt
+
 # Mac
 *.DS_Store
 
