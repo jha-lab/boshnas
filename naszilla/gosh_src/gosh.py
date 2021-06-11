@@ -126,7 +126,7 @@ class GOSH():
 
 	def train_teacher(self, xtrain, ytrain):
 		dset = list(zip(xtrain, ytrain))
-		for _ in range(EPOCHS):
+		for _ in range(EPOCHS//2):
 			total = 0
 			random.shuffle(dset)
 			for feat, y_true in dset:
