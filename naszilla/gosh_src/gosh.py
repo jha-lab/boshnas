@@ -94,7 +94,7 @@ class GOSH():
 
 	def parallelizedFunc(self, ind, init, explore_type, use_al):
 		init = torch.tensor(init, dtype=torch.float, requires_grad=True)
-		optimizer = torch.optim.SGD([init] , lr=10) if not self.second_order else Adahessian([init] , lr=0.1)
+		optimizer = torch.optim.SGD([init] , lr=10) if not self.second_order else Adahessian([init] , lr=0.5)
 		scheduler = torch.optim.lr_scheduler.CosineAnnealingLR(optimizer, T_max=2)
 		iteration = 0; equal = 0; z_old = 100; z = 0; zs = []
 		while iteration < 200:
@@ -105,7 +105,7 @@ class GOSH():
 			ep = self.student(init)
 			z = gosh_acq(pred, ep + (al if use_al else 0))
 			zs.append(z.item())
-			optimizer.zero_grad(); z.backward(); optimizer.step(); scheduler.step()
+			optimizer.zero_grad(); z.backward(create_graph=self.run_aleatoric); optimizer.step(); scheduler.step()
 			init.data = torch.max(self.bounds[0], torch.min(self.bounds[1], init.data))
 			if self.trust_region:
 				init.data = torch.max(trust_bounds[0], torch.min(trust_bounds[1], init.data))
