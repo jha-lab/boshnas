@@ -26,13 +26,13 @@ class GOSH():
 	def init_models(self, pretrained):
 		self.student = student(self.input_dim)
 		self.teacher = teacher(self.input_dim)
-		self.student_opt = torch.optim.SGD(self.student.parameters() , lr=10*LR)
+		self.student_opt = torch.optim.SGD(self.student.parameters() , lr=LR)
 		self.teacher_opt = torch.optim.SGD(self.teacher.parameters() , lr=LR)
 		self.student_l, self.teacher_l = [], []
 		self.epoch = 0
 		if self.run_aleatoric:
 			self.npn = npn(self.input_dim)
-			self.npn_opt = torch.optim.SGD(self.npn.parameters() , lr=LR)
+			self.npn_opt = torch.optim.SGD(self.npn.parameters() , lr=0.1*LR)
 			self.npn_l = []
 		if pretrained:
 			self.student, self.student_opt, _, self.student_l = load_model(self.student, self.student_opt)
@@ -46,9 +46,9 @@ class GOSH():
 		teacher_loss = self.train_teacher(xtrain, ytrain)
 		student_loss = self.train_student(xtrain, ytrain)
 		npn_loss = self.train_npn(xtrain, ytrain) if self.run_aleatoric else 0
-		# print(self.student_l, self.teacher_l)
-		# plotgraph(self.student_l, 'student'); plotgraph(self.teacher_l, 'teacher'); plotgraph(self.npn_l, 'npn')
-		EPOCHS = 10
+		plotgraph(self.student_l, 'student'); plotgraph(self.teacher_l, 'teacher')
+		if self.run_aleatoric: plotgraph(self.npn_l, 'npn')
+		EPOCHS = 50
 		return npn_loss, teacher_loss, student_loss
 
 	def predict(self, x):
@@ -83,19 +83,19 @@ class GOSH():
 		inits = random.choices(x, k=k)
 		if not self.run_aleatoric: self.teacher.eval()
 		self.freeze()
-		inits = Parallel(n_jobs=threads, backend='threading')(delayed(self.parallelizedFunc)(i, explore_type, use_al) for i in inits)
-		self.unfreeze()
+		inits = Parallel(n_jobs=threads, backend='threading')(delayed(self.parallelizedFunc)(ind, i, explore_type, use_al) for ind, i in enumerate(inits))
+		self.unfreeze();
 		indices = []
 		for init in inits:
-			devs = torch.mean(torch.abs(init - torch.from_numpy(np.array(x))))
+			devs = torch.mean(torch.abs(init - torch.from_numpy(np.array(x))), dim=1)
 			indices.append(torch.argmin(devs).item())
 		if not self.run_aleatoric: self.teacher.train()
 		return indices
 
-	def parallelizedFunc(self, init, explore_type, use_al):
+	def parallelizedFunc(self, ind, init, explore_type, use_al):
 		init = torch.tensor(init, dtype=torch.float, requires_grad=True)
-		optimizer = torch.optim.SGD([init] , lr=0.0001, momentum=0.9) if not self.second_order else Adahessian([init] , lr=0.2)
-		# scheduler = torch.optim.lr_scheduler.CosineAnnealingLR(optimizer, T_max=10)
+		optimizer = torch.optim.SGD([init] , lr=10) if not self.second_order else Adahessian([init] , lr=0.1)
+		scheduler = torch.optim.lr_scheduler.CosineAnnealingLR(optimizer, T_max=2)
 		iteration = 0; equal = 0; z_old = 100; zs = []
 		while iteration < 100:
 			old = deepcopy(init.data)
@@ -105,14 +105,14 @@ class GOSH():
 			ep = self.student(init)
 			z = gosh_acq(pred, al+ep)
 			zs.append(z.item())
-			optimizer.zero_grad(); z.backward(); optimizer.step(); # scheduler.step()
+			optimizer.zero_grad(); z.backward(); optimizer.step(); scheduler.step()
 			init.data = torch.max(self.bounds[0], torch.min(self.bounds[1], init.data))
 			if self.trust_region:
 				init.data = torch.max(trust_bounds[0], torch.min(trust_bounds[1], init.data))
 			equal = equal + 1 if torch.all((init.data - old) < epsilon) else 0
 			if equal > 5: break
 			iteration += 1
-		plotgraph(zs, f'aqn_scores_{random.randint(0, 100)}')
+		plotgraph(zs, f'aqn_scores_{ind}', plotline=False)
 		init.requires_grad = False 
 		return init.data
 
@@ -163,7 +163,7 @@ class GOSH():
 
 	def train_npn(self, xtrain, ytrain):
 		dset = list(zip(xtrain, ytrain))
-		for _ in range(EPOCHS):
+		for _ in range(EPOCHS//10):
 			total = 0
 			random.shuffle(dset)
 			for feat, y_true in dset:
@@ -174,6 +174,6 @@ class GOSH():
 				loss.backward()
 				self.npn_opt.step()
 				total += loss
-			self.npn_l.append(total /  len(xtrain))
+			self.npn_l.append(total.item() /  len(xtrain))
 		save_model(self.npn, self.npn_opt, self.epoch, self.npn_l)
 		return self.npn_l[-1]

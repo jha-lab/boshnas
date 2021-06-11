@@ -401,10 +401,10 @@ def boshnas(search_space,
     meta_neuralnet = GOSH(input_dim=data[0]['encoding'].shape[0], 
                           bounds=(min_x, max_x),
                           implement_gobi=implement_gobi,
-                          trust_region=trust_region, 
-                          second_order=second_order,
-                          parallel=parallel,
-                          model_aleatoric=model_aleatoric,
+                          trust_region=False, 
+                          second_order=False,
+                          parallel=False,
+                          model_aleatoric=True,
                           pretrained=False)
 
     query = num_init + k
@@ -437,7 +437,6 @@ def boshnas(search_space,
             # print('Getting next queries')
             query_indices = meta_neuralnet.get_queries(x=x, k=k, explore_type=explore_type, use_al=use_al)
             print(f'query_indices: {query_indices}')
-            exit(0)
 
             # add the k arches with the minimum acquisition function values
             for i in set(query_indices):

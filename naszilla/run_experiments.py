@@ -7,6 +7,8 @@ import pickle
 import numpy as np
 import copy
 
+sys.path.insert(0, './')
+
 sys.path.insert(0, '../')
 
 from naszilla.params import *
@@ -89,6 +91,9 @@ def run_experiments(args, save_dir):
             f.close()
 
 def main(args):
+    # Delete pngs in main
+    for file in os.listdir('./'):
+        if '.png' in file: os.remove(file)
 
     # make save directory
     save_dir = args.save_dir

@@ -13,7 +13,7 @@ from naszilla.nas_bench_101.cell_101 import Cell101
 # from naszilla.nas_bench_301.cell_301 import Cell301
 
 
-default_data_folder = '~/boshnas/'
+default_data_folder = './'
 
 
 class Nasbench:

@@ -25,9 +25,9 @@ def load_model(model, optimizer):
 	loss_list = checkpoint['loss_list']
 	return model, optimizer, epoch, loss_list
 
-def plotgraph(l, name):
+def plotgraph(l, name, plotline=True):
 	plt.plot(l, '.')
-	plt.plot(np.convolve(l, np.ones(5)/5, mode='same'), '--')
+	if plotline: plt.plot(np.convolve(l, np.ones(5)/5, mode='same'), '--')
 	plt.savefig(f'{name}.png')
 	plt.cla()
 
