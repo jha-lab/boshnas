@@ -27,7 +27,7 @@ class GOSH():
 		self.student = student(self.input_dim)
 		self.teacher = teacher(self.input_dim)
 		self.student_opt = torch.optim.SGD(self.student.parameters() , lr=LR)
-		self.teacher_opt = torch.optim.SGD(self.teacher.parameters() , lr=2*LR)
+		self.teacher_opt = torch.optim.AdamW(self.teacher.parameters() , lr=LR)
 		self.student_l, self.teacher_l = [], []
 		self.epoch = 0
 		if self.run_aleatoric:
@@ -94,10 +94,10 @@ class GOSH():
 
 	def parallelizedFunc(self, ind, init, explore_type, use_al):
 		init = torch.tensor(init, dtype=torch.float, requires_grad=True)
-		optimizer = torch.optim.SGD([init] , lr=80) if not self.second_order else Adahessian([init] , lr=0.1)
+		optimizer = torch.optim.SGD([init] , lr=10) if not self.second_order else Adahessian([init] , lr=0.1)
 		scheduler = torch.optim.lr_scheduler.CosineAnnealingLR(optimizer, T_max=2)
 		iteration = 0; equal = 0; z_old = 100; z = 0; zs = []
-		while iteration < 100:
+		while iteration < 200:
 			old = deepcopy(init.data)
 			if self.trust_region:
 				trust_bounds = (old*(1-trust_region), old*(1+trust_region))
@@ -109,9 +109,9 @@ class GOSH():
 			init.data = torch.max(self.bounds[0], torch.min(self.bounds[1], init.data))
 			if self.trust_region:
 				init.data = torch.max(trust_bounds[0], torch.min(trust_bounds[1], init.data))
-			equal = equal + 1 if torch.all((init.data - old) < epsilon) else 0
+			equal = equal + 1 if abs(z.item() - z_old) < epsilon else 0
 			if equal > 5: break
-			iteration += 1
+			iteration += 1; z_old = deepcopy(z.item())
 		plotgraph(zs, f'aqn_scores_{ind}', plotline=False)
 		init.requires_grad = False 
 		return init.data
@@ -126,7 +126,7 @@ class GOSH():
 
 	def train_teacher(self, xtrain, ytrain):
 		dset = list(zip(xtrain, ytrain))
-		for _ in range(EPOCHS//2):
+		for _ in range(2*EPOCHS):
 			total = 0
 			random.shuffle(dset)
 			for feat, y_true in dset:
@@ -163,7 +163,7 @@ class GOSH():
 
 	def train_npn(self, xtrain, ytrain):
 		dset = list(zip(xtrain, ytrain))
-		for _ in range(EPOCHS//2):
+		for _ in range(EPOCHS):
 			total = 0
 			random.shuffle(dset)
 			for feat, y_true in dset:

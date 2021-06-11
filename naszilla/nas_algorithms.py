@@ -19,7 +19,7 @@ from naszilla.gosh_src.gosh import *
 DEFAULT_NUM_INIT = 10
 DEFAULT_K = 10
 DEFAULT_TOTAL_QUERIES = 150
-DEFAULT_LOSS = 'val_loss'
+DEFAULT_LOSS = 'test_loss'
 
 
 def run_nas_algorithm(algo_params, search_space, mp):
@@ -407,20 +407,20 @@ def boshnas(search_space,
                           parallel=False,
                           model_aleatoric=False,
                           pretrained=False)
-
-    query = num_init + k
+    max_loss = np.max([d[loss] for d in data])
+    query = num_init
 
     while query <= total_queries:
 
         if not focus_new:
             xtrain = np.array([d['encoding'] for d in data])
-            ytrain = np.array([d[loss]/100 for d in data])
+            ytrain = np.array([d[loss]/max_loss for d in data])
         else:
             assert k == num_init
             training_data = data[-k:]
-            training_data.extend(random.sample(data[:k], k))
+            training_data.extend(random.sample(data[:-k], k))
             xtrain = np.array([d['encoding'] for d in training_data])
-            ytrain = np.array([d[loss]/100 for d in training_data])
+            ytrain = np.array([d[loss]/max_loss for d in training_data])
 
         # print(xtrain)
 
@@ -453,6 +453,7 @@ def boshnas(search_space,
                                                     deterministic=deterministic,
                                                     cutoff=cutoff)
                 data.append(arch_dict)
+            query += len(set(query_indices))
 
         else: 
             # Since GOBI is not implemented, next queries searched by mutation of the
@@ -490,14 +491,12 @@ def boshnas(search_space,
                                                     deterministic=deterministic,
                                                     cutoff=cutoff)
                 data.append(arch_dict)
+            # we just finished performing k queries
+            query += k
 
         if verbose:
             top_5_loss = sorted([d[loss] for d in data])[:min(5, len(data))]
             print('{}, query {}, top 5 losses {}'.format('boshnas', query, top_5_loss))
-
-        # we just finished performing k queries
-        query += k
-        
     return data
 
 def local_search(search_space,
