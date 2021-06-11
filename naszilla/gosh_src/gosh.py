@@ -32,7 +32,7 @@ class GOSH():
 		self.epoch = 0
 		if self.run_aleatoric:
 			self.npn = npn(self.input_dim)
-			self.npn_opt = torch.optim.SGD(self.npn.parameters() , lr=0.1*LR)
+			self.npn_opt = torch.optim.AdamW(self.npn.parameters() , lr=LR)
 			self.npn_l = []
 		if pretrained:
 			self.student, self.student_opt, _, self.student_l = load_model(self.student, self.student_opt)
