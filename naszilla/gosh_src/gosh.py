@@ -32,7 +32,7 @@ class GOSH():
 		self.epoch = 0
 		if self.run_aleatoric:
 			self.npn = npn(self.input_dim)
-			self.npn_opt = torch.optim.Adam(self.npn.parameters() , lr=LR)
+			self.npn_opt = torch.optim.SGD(self.npn.parameters() , lr=LR)
 			self.npn_l = []
 		if pretrained:
 			self.student, self.student_opt, _, self.student_l = load_model(self.student, self.student_opt)
@@ -41,12 +41,14 @@ class GOSH():
 				self.npn, self.npn_opt, self.epoch, self.npn_l = load_model(self.npn, self.npn_opt)
 
 	def train(self, xtrain, ytrain):
+		global EPOCHS
 		self.epoch += EPOCHS
 		teacher_loss = self.train_teacher(xtrain, ytrain)
 		student_loss = self.train_student(xtrain, ytrain)
 		npn_loss = self.train_npn(xtrain, ytrain) if self.run_aleatoric else 0
 		# print(self.student_l, self.teacher_l)
-		# plotgraph(self.student_l, 'student'); plotgraph(self.teacher_l, 'teacher')
+		# plotgraph(self.student_l, 'student'); plotgraph(self.teacher_l, 'teacher'); plotgraph(self.npn_l, 'npn')
+		EPOCHS = 10
 		return npn_loss, teacher_loss, student_loss
 
 	def predict(self, x):
@@ -92,23 +94,25 @@ class GOSH():
 
 	def parallelizedFunc(self, init, explore_type, use_al):
 		init = torch.tensor(init, dtype=torch.float, requires_grad=True)
-		optimizer = torch.optim.AdamW([init] , lr=0.2) if not self.second_order else Adahessian([init] , lr=0.2)
-		scheduler = torch.optim.lr_scheduler.CosineAnnealingLR(optimizer, T_max=10)
+		optimizer = torch.optim.SGD([init] , lr=0.0001, momentum=0.9) if not self.second_order else Adahessian([init] , lr=0.2)
+		# scheduler = torch.optim.lr_scheduler.CosineAnnealingLR(optimizer, T_max=10)
 		iteration = 0; equal = 0; z_old = 100; zs = []
-		while iteration < 200:
+		while iteration < 100:
 			old = deepcopy(init.data)
 			if self.trust_region:
 				trust_bounds = (old*(1-trust_region), old*(1+trust_region))
 			pred, al = self.npn(init) if self.run_aleatoric and use_al else self.teacher(init), 0
 			ep = self.student(init)
 			z = gosh_acq(pred, al+ep)
-			optimizer.zero_grad(); z.backward(); optimizer.step(); scheduler.step()
+			zs.append(z.item())
+			optimizer.zero_grad(); z.backward(); optimizer.step(); # scheduler.step()
 			init.data = torch.max(self.bounds[0], torch.min(self.bounds[1], init.data))
 			if self.trust_region:
 				init.data = torch.max(trust_bounds[0], torch.min(trust_bounds[1], init.data))
 			equal = equal + 1 if torch.all((init.data - old) < epsilon) else 0
 			if equal > 5: break
 			iteration += 1
+		plotgraph(zs, f'aqn_scores_{random.randint(0, 100)}')
 		init.requires_grad = False 
 		return init.data
 

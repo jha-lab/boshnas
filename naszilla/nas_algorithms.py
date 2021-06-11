@@ -312,7 +312,7 @@ def boshnas(search_space,
             implement_gobi=True,
             trust_region=False,
             model_aleatoric=False,
-            parallel=True,
+            parallel=False,
             second_order=False,
             deterministic=True,
             verbose=1):
@@ -377,27 +377,27 @@ def boshnas(search_space,
     x = []
     arches = []
 
-    print('Generating architectures')
+    # print('Generating architectures')
     for _, model in search_space.nasbench.fixed_statistics.items():
     	arches.append({'matrix': model['module_adjacency'], 
                        'ops': model['module_operations']})
 
-    print('Generating dataset') 
+    # print('Generating dataset') 
     dataset = search_space.convert_to_cells(arches=arches,
     										predictor_encoding=predictor_encoding,
     										train=False)
 
-    print('Generating list of input encodings')
+    # print('Generating list of input encodings')
     for cell in dataset:
     	x.append(cell['encoding'])
 
-    print('Calculating input bounds')
+    # print('Calculating input bounds')
     np_x = np.array(x)
     min_x, max_x = np.min(np_x, axis=0), np.max(np_x, axis=0)
 
     # Initialize GOSH model
     # Different bells-and-whistles for the GOSH model can be specified here
-    print('Initializing GOSH model')
+    # print('Initializing GOSH model')
     meta_neuralnet = GOSH(input_dim=data[0]['encoding'].shape[0], 
                           bounds=(min_x, max_x),
                           implement_gobi=implement_gobi,
@@ -414,10 +414,12 @@ def boshnas(search_space,
         xtrain = np.array([d['encoding'] for d in data])
         ytrain = np.array([d[loss]/100 for d in data])
 
+        # print(xtrain)
+
         train_error = 0
 
         # Train a BNN + NPN model on the current data and report triaining error
-        print('Training GOSH model')
+        # print('Training GOSH model')
         train_error = meta_neuralnet.train(xtrain, ytrain)
 
         # FIXME: Implement use_al based on change in min of y_train as the agent reaches
@@ -428,15 +430,17 @@ def boshnas(search_space,
             # Implementation of GOBI over the entire designs space
 
             # Get predictions for all datapoints
-            print('Calculating predictions')
+            # print('Calculating predictions')
             # candidate_predictions, uncertainties = meta_neuralnet.predict(x)
 
             # Get next queries using GOBI
-            print('Getting next queries')
+            # print('Getting next queries')
             query_indices = meta_neuralnet.get_queries(x=x, k=k, explore_type=explore_type, use_al=use_al)
+            print(f'query_indices: {query_indices}')
+            exit(0)
 
             # add the k arches with the minimum acquisition function values
-            for i in query_indices:
+            for i in set(query_indices):
                 arch_dict = search_space.query_arch(dataset[i]['spec'],
                                                     predictor_encoding=predictor_encoding,
                                                     deterministic=deterministic,

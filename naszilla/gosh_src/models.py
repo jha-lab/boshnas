@@ -44,11 +44,11 @@ class npn(nn.Module):
         super(npn, self).__init__()
         self.name = "npn"
         self.run = nn.Sequential(
-            NPNLinear(feats, feats // 2, False),
+            NPNLinear(feats, 64, False),
             NPNRelu(),
-            NPNLinear(feats // 2, feats // 4),
+            NPNLinear(64, 32),
             NPNRelu(),
-            NPNLinear(feats // 4, 1),
+            NPNLinear(32, 1),
             NPNSigmoid())
 
     def forward(self, x):

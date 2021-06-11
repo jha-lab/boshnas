@@ -32,7 +32,11 @@ def algo_params(param_str, queries=150):
         params.append({'algo_name':'bonas', 'total_queries':queries})
 
         # Adding BOSHNAS here
-        params.append({'algo_name':'boshnas', 'total_queries':queries})   
+        params.append({'algo_name':'boshnas', 'total_queries':queries})
+
+    elif param_str == 'sota_algos':
+        params.append({'algo_name':'bananas', 'total_queries':queries})
+        params.append({'algo_name':'boshnas', 'total_queries':queries})
         
     elif param_str == 'local_search_variants':
         params.append({'algo_name':'local_search', 'total_queries':queries})
