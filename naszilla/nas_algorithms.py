@@ -404,7 +404,7 @@ def boshnas(search_space,
                           trust_region=False, 
                           second_order=False,
                           parallel=False,
-                          model_aleatoric=True,
+                          model_aleatoric=False,
                           pretrained=False)
 
     query = num_init + k

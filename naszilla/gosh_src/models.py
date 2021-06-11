@@ -27,10 +27,10 @@ class teacher(nn.Module):
         self.run = nn.Sequential(
             nn.Linear(feats, 64),
             nn.Softplus(),
-            nn.Dropout(0.5),
+            nn.Dropout(0.3),
             nn.Linear(64, 32),
             nn.Softplus(),
-            nn.Dropout(0.5),
+            nn.Dropout(0.3),
             nn.Linear(32, 1),
             nn.Sigmoid())
 

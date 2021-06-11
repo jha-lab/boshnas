@@ -27,7 +27,7 @@ class GOSH():
 		self.student = student(self.input_dim)
 		self.teacher = teacher(self.input_dim)
 		self.student_opt = torch.optim.SGD(self.student.parameters() , lr=LR)
-		self.teacher_opt = torch.optim.SGD(self.teacher.parameters() , lr=LR)
+		self.teacher_opt = torch.optim.SGD(self.teacher.parameters() , lr=2*LR)
 		self.student_l, self.teacher_l = [], []
 		self.epoch = 0
 		if self.run_aleatoric:
@@ -94,16 +94,16 @@ class GOSH():
 
 	def parallelizedFunc(self, ind, init, explore_type, use_al):
 		init = torch.tensor(init, dtype=torch.float, requires_grad=True)
-		optimizer = torch.optim.SGD([init] , lr=10) if not self.second_order else Adahessian([init] , lr=0.1)
+		optimizer = torch.optim.SGD([init] , lr=80) if not self.second_order else Adahessian([init] , lr=0.1)
 		scheduler = torch.optim.lr_scheduler.CosineAnnealingLR(optimizer, T_max=2)
-		iteration = 0; equal = 0; z_old = 100; zs = []
+		iteration = 0; equal = 0; z_old = 100; z = 0; zs = []
 		while iteration < 100:
 			old = deepcopy(init.data)
 			if self.trust_region:
 				trust_bounds = (old*(1-trust_region), old*(1+trust_region))
-			pred, al = self.npn(init) if self.run_aleatoric and use_al else self.teacher(init), 0
+			pred, al = self.npn(init) if self.run_aleatoric else (self.teacher(init), 0)
 			ep = self.student(init)
-			z = gosh_acq(pred, al+ep)
+			z = gosh_acq(pred, ep + (al if use_al else 0))
 			zs.append(z.item())
 			optimizer.zero_grad(); z.backward(); optimizer.step(); scheduler.step()
 			init.data = torch.max(self.bounds[0], torch.min(self.bounds[1], init.data))
@@ -163,7 +163,7 @@ class GOSH():
 
 	def train_npn(self, xtrain, ytrain):
 		dset = list(zip(xtrain, ytrain))
-		for _ in range(EPOCHS//10):
+		for _ in range(EPOCHS//2):
 			total = 0
 			random.shuffle(dset)
 			for feat, y_true in dset:
