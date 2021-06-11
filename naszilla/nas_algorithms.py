@@ -309,6 +309,7 @@ def boshnas(search_space,
             cutoff=0,
             mutate_encoding='adj',
             random_encoding='adj',
+            focus_new=True,
             implement_gobi=True,
             trust_region=False,
             model_aleatoric=False,
@@ -411,8 +412,15 @@ def boshnas(search_space,
 
     while query <= total_queries:
 
-        xtrain = np.array([d['encoding'] for d in data])
-        ytrain = np.array([d[loss]/100 for d in data])
+    	if not focus_new:
+	        xtrain = np.array([d['encoding'] for d in data])
+	        ytrain = np.array([d[loss]/100 for d in data])
+	    else:
+	    	assert k == num_init
+	    	training_data = data[-k:]
+	    	training_data.extend(random.sample(data[:k], k))
+	    	xtrain = np.array([d['encoding'] for d in training_data])
+	        ytrain = np.array([d[loss]/100 for d in training_data])
 
         # print(xtrain)
 
