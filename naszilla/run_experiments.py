@@ -7,8 +7,10 @@ import pickle
 import numpy as np
 import copy
 
-sys.path.insert(0, './')
+from matplotlib import pyplot as plt
+from matplotlib.ticker import MaxNLocator
 
+sys.path.insert(0, './')
 sys.path.insert(0, '../')
 
 from naszilla.params import *
@@ -90,6 +92,35 @@ def run_experiments(args, save_dir):
             pickle.dump([algorithm_params, metann_params, results, walltimes, run_data, val_results], f)
             f.close()
 
+    if args.save_fig:
+        losses = {param['algo_name']:[] for param in algorithm_params}
+        for i in range(trials):
+            filename = os.path.join(save_dir, '{}_{}.pkl'.format(out_file, i))
+            with open(filename, 'rb') as f:
+                results = pickle.load(f)
+                for j in range(len(results[0])):
+                    losses[results[0][j]['algo_name']].append(results[2][j])
+
+        fig, ax = plt.subplots()
+        for algo in losses.keys():
+            ax.errorbar(losses[algo][0][:, 0], 
+                         np.mean([loss[:, 1] for loss in losses[algo]], axis=0),
+                         yerr=1.96*np.std([loss[:, 1] for loss in losses[algo]], axis=0),
+                         marker='o',
+                         capsize=5,
+                         label=algo)
+        ax.grid()
+        ax.set_xlabel('Queries')
+        ax.set_ylabel('Test Loss')
+        ax.xaxis.set_major_locator(MaxNLocator(integer=True))
+        ax.legend()
+        fig_filename = os.path.join(save_dir, 'results.png') 
+        fig.savefig(fig_filename)
+        plt.close(fig)
+
+        print('\n* Saving figure to {}'.format(fig_filename))
+
+
 def main(args):
     # Delete pngs in main
     for file in os.listdir('./'):
@@ -129,6 +160,7 @@ if __name__ == "__main__":
     parser.add_argument('--output_filename', type=str, default='round', help='name of output files')
     parser.add_argument('--save_dir', type=str, default='results_output', help='name of save directory')
     parser.add_argument('--save_specs', type=bool, default=False, help='save the architecture specs')    
+    parser.add_argument('--save_fig', type=bool, default=True, help='save the results figure')    
 
     args = parser.parse_args()
     main(args)
