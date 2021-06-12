@@ -409,16 +409,17 @@ def boshnas(search_space,
                           pretrained=False)
     max_loss = np.max([d[loss] for d in data])
     query = num_init
+    num_queries = 0
 
     while query <= total_queries:
 
-        if not focus_new:
+        if (not focus_new) or num_queries == 0:
             xtrain = np.array([d['encoding'] for d in data])
             ytrain = np.array([d[loss]/max_loss for d in data])
         else:
             assert k == num_init
-            training_data = data[-k:]
-            training_data.extend(random.sample(data[:-k], k))
+            training_data = data[-num_queries:]
+            training_data.extend(random.sample(data[:-num_queries], min(5*k, len(data[:-num_queries]))))
             xtrain = np.array([d['encoding'] for d in training_data])
             ytrain = np.array([d[loss]/max_loss for d in training_data])
 
@@ -453,7 +454,8 @@ def boshnas(search_space,
                                                     deterministic=deterministic,
                                                     cutoff=cutoff)
                 data.append(arch_dict)
-            query += len(set(query_indices))
+            num_queries = len(set(query_indices))
+            query += num_queries
 
         else: 
             # Since GOBI is not implemented, next queries searched by mutation of the

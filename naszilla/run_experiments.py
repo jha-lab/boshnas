@@ -6,6 +6,9 @@ import os
 import pickle
 import numpy as np
 import copy
+import warnings
+warnings.filterwarnings("ignore")
+
 
 from matplotlib import pyplot as plt
 from matplotlib.ticker import MaxNLocator

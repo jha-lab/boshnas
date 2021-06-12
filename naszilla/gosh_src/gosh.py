@@ -32,7 +32,7 @@ class GOSH():
 		self.epoch = 0
 		if self.run_aleatoric:
 			self.npn = npn(self.input_dim)
-			self.npn_opt = torch.optim.AdamW(self.npn.parameters() , lr=0.1*LR)
+			self.npn_opt = torch.optim.AdamW(self.npn.parameters() , lr=0.05*LR)
 			self.npn_l = []
 		if pretrained:
 			self.student, self.student_opt, _, self.student_l = load_model(self.student, self.student_opt)
@@ -140,11 +140,11 @@ class GOSH():
 
 	def train_teacher(self, xtrain, ytrain):
 		dset = list(zip(xtrain, ytrain))
-		random.shuffle(dset); vloss = []
-		split = int(Train_test_split * len(dset))
-		tset, vset = dset[:split], dset[split:]
+		vloss = []; 
 		for _ in range(EPOCHS):
-			random.shuffle(tset)
+			random.shuffle(dset); 
+			split = int(Train_test_split * len(dset))
+			tset, vset = dset[:split], dset[split:]
 			self.teacher_l.append(self.train_teacher_helper(tset))
 			vloss.append(self.train_teacher_helper(vset, False))
 			if early_stop(self.teacher_l, vloss): break
@@ -167,11 +167,11 @@ class GOSH():
 
 	def train_student(self, xtrain, ytrain):
 		dset = list(zip(xtrain, ytrain))
-		random.shuffle(dset); vloss = []
-		split = int(Train_test_split * len(dset))
-		tset, vset = dset[:split], dset[split:]
+		vloss = []; 
 		for _ in range(EPOCHS):
-			random.shuffle(tset)
+			random.shuffle(dset); 
+			split = int(Train_test_split * len(dset))
+			tset, vset = dset[:split], dset[split:]
 			self.student_l.append(self.train_student_helper(tset))
 			vloss.append(self.train_student_helper(vset, False))
 			if early_stop(self.student_l, vloss): break
@@ -192,11 +192,11 @@ class GOSH():
 
 	def train_npn(self, xtrain, ytrain):
 		dset = list(zip(xtrain, ytrain))
-		random.shuffle(dset); vloss = []
-		split = int(Train_test_split * len(dset))
-		tset, vset = dset[:split], dset[split:]
+		vloss = []; 
 		for _ in range(EPOCHS):
-			random.shuffle(tset)
+			random.shuffle(dset); 
+			split = int(Train_test_split * len(dset))
+			tset, vset = dset[:split], dset[split:]
 			self.npn_l.append(self.train_npn_helper(tset))
 			vloss.append(self.train_npn_helper(vset, False))
 			if early_stop(self.npn_l, vloss): break

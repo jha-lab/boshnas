@@ -7,7 +7,7 @@ from .constants import *
 import matplotlib.pyplot as plt
 
 def save_model(model, optimizer, epoch, loss_list):
-	file_path = MODEL_SAVE_PATH + "/" + model.name + "_" + str(epoch) + ".ckpt"
+	file_path = MODEL_SAVE_PATH + "/" + model.name + ".ckpt"
 	torch.save({
         'epoch': epoch,
         'model_state_dict': model.state_dict(),
@@ -17,7 +17,6 @@ def save_model(model, optimizer, epoch, loss_list):
 def load_model(model, optimizer):
 	file_path = MODEL_SAVE_PATH + "/" + model.name + ".ckpt"
 	assert os.path.exists(file_path)
-	print(color.GREEN+"Loading pre-trained model: "+filename+color.ENDC)
 	checkpoint = torch.load(file_path)
 	model.load_state_dict(checkpoint['model_state_dict'])
 	optimizer.load_state_dict(checkpoint['optimizer_state_dict'])
@@ -40,6 +39,9 @@ def unfreeze_models(models):
 		for param in model.parameters(): param.requires_grad = True
 
 def early_stop(tloss, vloss):
-	if len(vloss) > 3:
-		return (vloss[-1] > tloss[-1]) and (vloss[-2] > tloss[-2]) and (vloss[-3] > tloss[-3])
+	if len(vloss) > 10:
+		for i in range(1, 8):
+			if vloss[-i] < vloss[-i-1]:
+				return False
+		return True
 	return False
