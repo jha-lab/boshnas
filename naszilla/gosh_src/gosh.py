@@ -26,7 +26,7 @@ class GOSH():
 	def init_models(self, pretrained):
 		self.student = student(self.input_dim)
 		self.teacher = teacher(self.input_dim)
-		self.student_opt = torch.optim.SGD(self.student.parameters() , lr=LR)
+		self.student_opt = torch.optim.SGD(self.student.parameters() , lr=LR, weight_decay=1e-3)
 		self.teacher_opt = torch.optim.AdamW(self.teacher.parameters() , lr=LR)
 		self.student_l, self.teacher_l = [], []
 		self.epoch = 0
@@ -48,7 +48,7 @@ class GOSH():
 		npn_loss = self.train_npn(xtrain, ytrain) if self.run_aleatoric else 0
 		plotgraph(self.student_l, 'student'); plotgraph(self.teacher_l, 'teacher')
 		if self.run_aleatoric: plotgraph(self.npn_l, 'npn')
-		EPOCHS = 50
+		EPOCHS = 30
 		return npn_loss, teacher_loss, student_loss
 
 	def predict(self, x):

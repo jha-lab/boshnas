@@ -444,7 +444,7 @@ def boshnas(search_space,
             # Get next queries using GOBI
             # print('Getting next queries')
             query_indices = meta_neuralnet.get_queries(x=x, k=k, explore_type=explore_type, use_al=use_al)
-            print(f'query_indices: {query_indices}')
+            # print(f'query_indices: {query_indices}')
 
             # add the k arches with the minimum acquisition function values
             for i in set(query_indices):
