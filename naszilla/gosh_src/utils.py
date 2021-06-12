@@ -38,3 +38,8 @@ def freeze_models(models):
 def unfreeze_models(models):
 	for model in models:
 		for param in model.parameters(): param.requires_grad = True
+
+def early_stop(tloss, vloss):
+	if len(vloss) > 3:
+		return (vloss[-1] > tloss[-1]) and (vloss[-2] > tloss[-2]) and (vloss[-3] > tloss[-3])
+	return False

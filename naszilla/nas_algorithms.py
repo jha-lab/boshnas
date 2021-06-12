@@ -314,7 +314,7 @@ def boshnas(search_space,
             trust_region=False,
             model_aleatoric=True,
             parallel=False,
-            second_order=False,
+            second_order=True,
             deterministic=True,
             verbose=1):
     """

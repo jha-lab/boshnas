@@ -26,8 +26,8 @@ class GOSH():
 	def init_models(self, pretrained):
 		self.student = student(self.input_dim)
 		self.teacher = teacher(self.input_dim)
-		self.student_opt = torch.optim.SGD(self.student.parameters() , lr=LR, weight_decay=1e-3)
-		self.teacher_opt = torch.optim.AdamW(self.teacher.parameters() , lr=LR)
+		self.student_opt = torch.optim.SGD(self.student.parameters() , lr=2*LR)
+		self.teacher_opt = torch.optim.AdamW(self.teacher.parameters() , lr=2*LR)
 		self.student_l, self.teacher_l = [], []
 		self.epoch = 0
 		if self.run_aleatoric:
@@ -48,7 +48,7 @@ class GOSH():
 		npn_loss = self.train_npn(xtrain, ytrain) if self.run_aleatoric else 0
 		plotgraph(self.student_l, 'student'); plotgraph(self.teacher_l, 'teacher')
 		if self.run_aleatoric: plotgraph(self.npn_l, 'npn')
-		EPOCHS = 30
+		# EPOCHS = 50
 		return npn_loss, teacher_loss, student_loss
 
 	def predict(self, x):
@@ -103,9 +103,10 @@ class GOSH():
 				trust_bounds = (old*(1-trust_region), old*(1+trust_region))
 			pred, al = self.npn(init) if self.run_aleatoric else (self.teacher(init), 0)
 			ep = self.student(init)
-			z = gosh_acq(pred, ep + (al if use_al else 0))
+			if self.run_aleatoric and use_al: ep += al
+			z = gosh_acq(pred, ep)
 			zs.append(z.item())
-			optimizer.zero_grad(); z.backward(create_graph=self.run_aleatoric); optimizer.step(); scheduler.step()
+			optimizer.zero_grad(); z.backward(create_graph=True); optimizer.step(); scheduler.step()
 			init.data = torch.max(self.bounds[0], torch.min(self.bounds[1], init.data))
 			if self.trust_region:
 				init.data = torch.max(trust_bounds[0], torch.min(trust_bounds[1], init.data))
@@ -124,56 +125,80 @@ class GOSH():
 		unfreeze_models([self.student, self.teacher])
 		if self.run_aleatoric: unfreeze_models([self.npn])
 
+	## Teacher training
+	def train_teacher_helper(self, tset, training = True):
+		total = 0
+		for feat, y_true in tset:
+			feat = torch.tensor(feat, dtype=torch.float)
+			y_true = torch.tensor([y_true], dtype=torch.float)
+			y_pred = self.teacher(feat)
+			loss = (y_pred - y_true) ** 2
+			if training:
+				self.teacher_opt.zero_grad(); loss.backward(); self.teacher_opt.step()
+			total += loss
+		return total.item() / len(tset)
+
 	def train_teacher(self, xtrain, ytrain):
 		dset = list(zip(xtrain, ytrain))
-		for _ in range(2*EPOCHS):
-			total = 0
-			random.shuffle(dset)
-			for feat, y_true in dset:
-				feat = torch.tensor(feat, dtype=torch.float)
-				y_true = torch.tensor([y_true], dtype=torch.float)
-				y_pred = self.teacher(feat)
-				self.teacher_opt.zero_grad()
-				loss = (y_pred - y_true) ** 2
-				loss.backward()
-				self.teacher_opt.step()
-				total += loss
-			self.teacher_l.append(total.item() /  len(xtrain))
+		random.shuffle(dset); vloss = []
+		split = int(Train_test_split * len(dset))
+		tset, vset = dset[:split], dset[split:]
+		for _ in range(EPOCHS):
+			random.shuffle(tset)
+			self.teacher_l.append(self.train_teacher_helper(tset))
+			vloss.append(self.train_teacher_helper(vset, False))
+			if early_stop(self.teacher_l, vloss): break
 		save_model(self.teacher, self.teacher_opt, self.epoch, self.teacher_l)
 		return self.teacher_l[-1]
 
+	## Student training
+	def train_student_helper(self, tset, training = True):
+		total = 0
+		for feat, y_true in tset:
+			feat = torch.tensor(feat, dtype=torch.float)
+			outputs = [self.teacher(feat) for _ in range(Teacher_student_cycles)]
+			y_true = torch.std(torch.stack(outputs))
+			y_pred = self.student(feat)
+			loss = (y_pred - y_true) ** 2
+			if training:
+				self.student_opt.zero_grad(); loss.backward(); self.student_opt.step()
+			total += loss
+		return total.item() / len(tset)
+
 	def train_student(self, xtrain, ytrain):
 		dset = list(zip(xtrain, ytrain))
+		random.shuffle(dset); vloss = []
+		split = int(Train_test_split * len(dset))
+		tset, vset = dset[:split], dset[split:]
 		for _ in range(EPOCHS):
-			total = 0
-			random.shuffle(dset)
-			for feat, y_true in dset:
-				feat = torch.tensor(feat, dtype=torch.float)
-				outputs = [self.teacher(feat) for _ in range(Teacher_student_cycles)]
-				y_true = torch.std(torch.stack(outputs))
-				y_pred = self.student(feat)
-				self.student_opt.zero_grad()
-				loss = (y_pred - y_true) ** 2
-				loss.backward()
-				self.student_opt.step()
-				total += loss
-			self.student_l.append(total.item() /  len(xtrain))
+			random.shuffle(tset)
+			self.student_l.append(self.train_student_helper(tset))
+			vloss.append(self.train_student_helper(vset, False))
+			if early_stop(self.student_l, vloss): break
 		save_model(self.student, self.student_opt, self.epoch, self.student_l)
 		return self.student_l[-1]
 
+	## NPN training
+	def train_npn_helper(self, tset, training = True):
+		total = 0
+		for feat, y_true in tset:
+			feat = torch.tensor(feat, dtype=torch.float)
+			y_pred = self.npn(feat)
+			loss = Aleatoric_Loss(y_pred, y_true)
+			if training:
+				self.npn_opt.zero_grad(); loss.backward(); self.npn_opt.step()
+			total += loss
+		return total.item() / len(tset)
+
 	def train_npn(self, xtrain, ytrain):
 		dset = list(zip(xtrain, ytrain))
+		random.shuffle(dset); vloss = []
+		split = int(Train_test_split * len(dset))
+		tset, vset = dset[:split], dset[split:]
 		for _ in range(EPOCHS):
-			total = 0
-			random.shuffle(dset)
-			for feat, y_true in dset:
-				feat = torch.tensor(feat, dtype=torch.float)
-				y_pred = self.npn(feat)
-				self.npn_opt.zero_grad()
-				loss = Aleatoric_Loss(y_pred, y_true)
-				loss.backward()
-				self.npn_opt.step()
-				total += loss
-			self.npn_l.append(total.item() /  len(xtrain))
+			random.shuffle(tset)
+			self.npn_l.append(self.train_npn_helper(tset))
+			vloss.append(self.train_npn_helper(vset, False))
+			if early_stop(self.npn_l, vloss): break
 		save_model(self.npn, self.npn_opt, self.epoch, self.npn_l)
 		return self.npn_l[-1]

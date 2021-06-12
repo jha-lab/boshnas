@@ -6,3 +6,4 @@ Teacher_student_cycles = 10
 epsilon = 1e-5
 trust_region = 0.25
 EPOCHS = 150
+Train_test_split = 0.8
