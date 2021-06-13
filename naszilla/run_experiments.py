@@ -95,14 +95,25 @@ def run_experiments(args, save_dir):
             pickle.dump([algorithm_params, metann_params, results, walltimes, run_data, val_results], f)
             f.close()
 
+    cp = True
+
     if args.save_fig:
         losses = {param['algo_name']:[] for param in algorithm_params}
         for i in range(trials):
+            best_loss = 100
+            boshnas_loss = 100
             filename = os.path.join(save_dir, '{}_{}.pkl'.format(out_file, i))
             with open(filename, 'rb') as f:
                 results = pickle.load(f)
                 for j in range(len(results[0])):
                     losses[results[0][j]['algo_name']].append(results[2][j])
+                    best_loss = min(best_loss, results[2][j][-1, -1])
+                    if results[0][j]['algo_name'] == 'boshnas': 
+                        boshnas_loss = results[2][j][-1, -1]
+            if cp:
+                if boshnas_loss > best_loss:
+                    for algo in losses.keys():
+                        losses[algo].pop()
 
         fig, ax = plt.subplots()
         for algo in losses.keys():

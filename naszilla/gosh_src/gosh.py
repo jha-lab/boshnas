@@ -46,8 +46,8 @@ class GOSH():
 		teacher_loss = self.train_teacher(xtrain, ytrain)
 		student_loss = self.train_student(xtrain, ytrain)
 		npn_loss = self.train_npn(xtrain, ytrain) if self.run_aleatoric else 0
-		plotgraph(self.student_l, 'student'); plotgraph(self.teacher_l, 'teacher')
-		if self.run_aleatoric: plotgraph(self.npn_l, 'npn')
+		# plotgraph(self.student_l, 'student'); plotgraph(self.teacher_l, 'teacher')
+		# if self.run_aleatoric: plotgraph(self.npn_l, 'npn')
 		# EPOCHS = 50
 		return npn_loss, teacher_loss, student_loss
 
@@ -113,7 +113,7 @@ class GOSH():
 			equal = equal + 1 if abs(z.item() - z_old) < epsilon else 0
 			if equal > 5: break
 			iteration += 1; z_old = deepcopy(z.item())
-		plotgraph(zs, f'aqn_scores_{ind}', plotline=False)
+		# plotgraph(zs, f'aqn_scores_{ind}', plotline=False)
 		init.requires_grad = False 
 		return init.data
 

@@ -313,7 +313,7 @@ def boshnas(search_space,
             implement_gobi=True,
             trust_region=False,
             model_aleatoric=True,
-            parallel=False,
+            parallel=True,
             second_order=True,
             deterministic=True,
             verbose=1):
