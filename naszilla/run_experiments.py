@@ -108,7 +108,7 @@ def run_experiments(args, save_dir):
         for algo in losses.keys():
             ax.errorbar(losses[algo][0][:, 0], 
                          np.mean([loss[:, 1] for loss in losses[algo]], axis=0),
-                         yerr=1.96*np.std([loss[:, 1] for loss in losses[algo]], axis=0),
+                         yerr=1.64*np.std([loss[:, 1] for loss in losses[algo]], axis=0),
                          marker='o',
                          capsize=5,
                          label=algo)
