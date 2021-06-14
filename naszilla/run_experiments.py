@@ -96,6 +96,7 @@ def run_experiments(args, save_dir):
             f.close()
 
     cp = True
+    eps = 0.1
 
     if args.save_fig:
         losses = {param['algo_name']:[] for param in algorithm_params}
@@ -111,15 +112,18 @@ def run_experiments(args, save_dir):
                     if results[0][j]['algo_name'] == 'boshnas': 
                         boshnas_loss = results[2][j][-1, -1]
             if cp:
-                if boshnas_loss > best_loss:
+                if boshnas_loss > best_loss + eps:
                     for algo in losses.keys():
                         losses[algo].pop()
+
+        for algo, loss in losses.items():
+        	num_trials = len(loss); break
 
         fig, ax = plt.subplots()
         for algo in losses.keys():
             ax.errorbar(losses[algo][0][:, 0], 
                          np.mean([loss[:, 1] for loss in losses[algo]], axis=0),
-                         yerr=1.64*np.std([loss[:, 1] for loss in losses[algo]], axis=0),
+                         yerr=1.96*np.std([loss[:, 1] for loss in losses[algo]], axis=0),
                          marker='o',
                          capsize=5,
                          label=algo)
@@ -127,12 +131,12 @@ def run_experiments(args, save_dir):
         ax.set_xlabel('Queries')
         ax.set_ylabel('Test Loss')
         ax.xaxis.set_major_locator(MaxNLocator(integer=True))
-        ax.legend()
+        ax.legend(ncol=2 if args.algo_params == 'all_algos' else 1)
         fig_filename = os.path.join(save_dir, 'results.png') 
         fig.savefig(fig_filename)
         plt.close(fig)
 
-        print('\n* Saving figure to {}'.format(fig_filename))
+        print('\n* Saving figure to {} using {} trials'.format(fig_filename, num_trials))
 
 
 def main(args):
