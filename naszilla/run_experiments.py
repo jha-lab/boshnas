@@ -24,6 +24,9 @@ from naszilla.nas_benchmarks import Nasbench101
 
 from naszilla.nas_algorithms import run_nas_algorithm
 
+algo_labels = {'random': 'RS', 'evolution': 'ES', 'bananas': 'BANANAS', 'bonas': 'BONAS', 'gp_bayesopt': 'GP-BO',
+    'dngo': 'DNGO', 'bohamiann': 'BOHAMIANN', 'local_search': 'LS', 'gcn_predictor': 'GCN', 'boshnas': 'BOSHNAS'}
+
 def run_experiments(args, save_dir):
 
     # set up arguments
@@ -54,46 +57,46 @@ def run_experiments(args, save_dir):
     else:
         raise ValueError('Invalid search space')
 
-    for i in range(trials):
-        results = []
-        val_results = []
-        walltimes = []
-        run_data = []
+    # for i in range(trials):
+    #     results = []
+    #     val_results = []
+    #     walltimes = []
+    #     run_data = []
 
-        for j in range(num_algos):
-            print('\n* Running NAS algorithm: {}'.format(algorithm_params[j]))
-            starttime = time.time()
-            # this line runs the nas algorithm and returns the result
-            result, val_result, run_datum = run_nas_algorithm(algorithm_params[j], search_space, mp)
+    #     for j in range(num_algos):
+    #         print('\n* Running NAS algorithm: {}'.format(algorithm_params[j]))
+    #         starttime = time.time()
+    #         # this line runs the nas algorithm and returns the result
+    #         result, val_result, run_datum = run_nas_algorithm(algorithm_params[j], search_space, mp)
 
-            result = np.round(result, 5)
-            val_result = np.round(val_result, 5)
+    #         result = np.round(result, 5)
+    #         val_result = np.round(val_result, 5)
 
-            # remove unnecessary dict entries that take up space
-            for d in run_datum:
-                if not save_specs:
-                    d.pop('spec')
-                for key in ['encoding', 'adj', 'path', 'dist_to_min']:
-                    if key in d:
-                        d.pop(key)
+    #         # remove unnecessary dict entries that take up space
+    #         for d in run_datum:
+    #             if not save_specs:
+    #                 d.pop('spec')
+    #             for key in ['encoding', 'adj', 'path', 'dist_to_min']:
+    #                 if key in d:
+    #                     d.pop(key)
 
-            # add walltime, results, run_data
-            walltimes.append(time.time()-starttime)
-            results.append(result)
-            val_results.append(val_result)
-            run_data.append(run_datum)
+    #         # add walltime, results, run_data
+    #         walltimes.append(time.time()-starttime)
+    #         results.append(result)
+    #         val_results.append(val_result)
+    #         run_data.append(run_datum)
 
-        # print and pickle results
-        filename = os.path.join(save_dir, '{}_{}.pkl'.format(out_file, i))
-        print('\n* Trial summary: (params, results, walltimes)')
-        print(algorithm_params)
-        print(ss)
-        print(results)
-        print(walltimes)
-        print('\n* Saving to file {}'.format(filename))
-        with open(filename, 'wb') as f:
-            pickle.dump([algorithm_params, metann_params, results, walltimes, run_data, val_results], f)
-            f.close()
+    #     # print and pickle results
+    #     filename = os.path.join(save_dir, '{}_{}.pkl'.format(out_file, i))
+    #     print('\n* Trial summary: (params, results, walltimes)')
+    #     print(algorithm_params)
+    #     print(ss)
+    #     print(results)
+    #     print(walltimes)
+    #     print('\n* Saving to file {}'.format(filename))
+    #     with open(filename, 'wb') as f:
+    #         pickle.dump([algorithm_params, metann_params, results, walltimes, run_data, val_results], f)
+    #         f.close()
 
     cp = True
     eps = 0.1
@@ -119,20 +122,20 @@ def run_experiments(args, save_dir):
         for algo, loss in losses.items():
         	num_trials = len(loss); break
 
-        fig, ax = plt.subplots()
+        fig, ax = plt.subplots(figsize=(6.4, 4))
         for algo in losses.keys():
             ax.errorbar(losses[algo][0][:, 0], 
                          np.mean([loss[:, 1] for loss in losses[algo]], axis=0),
-                         yerr=1.96*np.std([loss[:, 1] for loss in losses[algo]], axis=0),
+                         yerr=1.64*np.std([loss[:, 1] for loss in losses[algo]], axis=0),
                          marker='o',
                          capsize=5,
-                         label=algo)
+                         label=algo_labels[algo])
         ax.grid()
-        ax.set_xlabel('Queries')
-        ax.set_ylabel('Test Loss')
+        ax.set_xlabel('Queries', fontsize=12)
+        ax.set_ylabel('Test Loss', fontsize=12)
         ax.xaxis.set_major_locator(MaxNLocator(integer=True))
         ax.legend(ncol=2 if args.algo_params == 'all_algos' else 1)
-        fig_filename = os.path.join(save_dir, 'results.png') 
+        fig_filename = os.path.join(save_dir, 'results.pdf') 
         fig.savefig(fig_filename)
         plt.close(fig)
 
