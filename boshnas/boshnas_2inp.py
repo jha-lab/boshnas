@@ -96,7 +96,7 @@ class BOSHNAS():
 		for init in inits:
 			devs1 = torch.mean(torch.abs(init[0] - torch.from_numpy(np.array([x[0] for x in x]))), dim=1)
 			devs2 = torch.mean(torch.abs(init[1] - torch.from_numpy(np.array([x[1] for x in x]))), dim=1)
-			indices.append((torch.argmin(devs1).item(), torch.argmin(devs2).item()))
+			indices.append(torch.argmin(devs1 + devs2).item())
 		if not self.run_aleatoric: self.teacher.train()
 		return indices
 
