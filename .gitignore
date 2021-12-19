@@ -9,6 +9,7 @@ index_hash.pkl
 notebooks/*.png
 notebooks/*.pdf
 *.out
+*.pdf
 
 # GOSH files
 **.ckpt
