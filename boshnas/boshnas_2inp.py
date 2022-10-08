@@ -9,6 +9,7 @@ from constants import *
 from acq import *
 from adahessian import Adahessian
 from boshnas_utils import *
+from tqdm import tqdm
 
 NUM_CORES = multiprocessing.cpu_count()
 DEBUG = False
@@ -160,7 +161,7 @@ class BOSHNAS():
 	def train_teacher(self, xtrain1, xtrain2, ytrain):
 		dset = list(zip(xtrain1, xtrain2, ytrain))
 		vloss = []; 		
-		for _ in range(EPOCHS):
+		for _ in tqdm(range(EPOCHS), desc='Training teacher model'):
 			random.shuffle(dset); 
 			split = int(Train_test_split * len(dset))
 			tset, vset = dset[:split], dset[split:]
@@ -188,7 +189,7 @@ class BOSHNAS():
 	def train_student(self, xtrain1, xtrain2, ytrain):
 		dset = list(zip(xtrain1, xtrain2, ytrain))
 		vloss = []; 
-		for _ in range(EPOCHS):
+		for _ in tqdm(range(EPOCHS), desc='Training student model'):
 			random.shuffle(dset); 
 			split = int(Train_test_split * len(dset))
 			tset, vset = dset[:split], dset[split:]
@@ -214,7 +215,7 @@ class BOSHNAS():
 	def train_npn(self, xtrain1, xtrain2, ytrain):
 		dset = list(zip(xtrain1, xtrain2, ytrain))
 		vloss = []; 
-		for _ in range(EPOCHS):
+		for _ in tqdm(range(EPOCHS), desc='Training NPN model'):
 			random.shuffle(dset); 
 			split = int(Train_test_split * len(dset))
 			tset, vset = dset[:split], dset[split:]
