@@ -58,7 +58,7 @@ Here, `<algo_params>` can be one of: `simple_algos`, `all_algos`, `sota_algos` (
 
 Cite our work using the following bitex entry:
 
-```
+```bibtex
 @article{tuli2022jair,
       title={{FlexiBERT}: Are Current Transformer Architectures too Homogeneous and Rigid?}, 
       author={Tuli, Shikhar and Dedhia, Bhishma and Tuli, Shreshth and Jha, Niraj K.},
@@ -69,7 +69,27 @@ Cite our work using the following bitex entry:
 }
 ```
 
-This work is used in [jha-lab/txf_design-space](https://github.com/jha-lab/txf_design-space). Other works that leverage BOSHNAS are in review. Stay tuned for their links!
+This work is used in [jha-lab/txf_design-space](https://github.com/jha-lab/txf_design-space). Other works that leverage BOSHNAS and its extensions include:
+
+```bibtex
+@article{tuli2022codebench,
+  title={CODEBench: A Neural Architecture and Hardware Accelerator Co-Design Framework},
+  author={Tuli, Shikhar and Li, Chia-Hao and Sharma, Ritvik and Jha, Niraj K},
+  journal={ACM Transactions on Embedded Computing Systems},
+  publisher={ACM New York, NY}
+}
+```
+
+```bibtex
+@article{tuli2023transcode,
+      title={{TransCODE}: Co-design of Transformers and Accelerators for Efficient Training and Inference}, 
+      author={Tuli, Shikhar and Jha, Niraj K.},
+      year={2023},
+      eprint={2303.14882},
+      archivePrefix={arXiv},
+      primaryClass={cs.LG}
+}
+```
 
 ## License
 
